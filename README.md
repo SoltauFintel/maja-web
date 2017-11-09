@@ -1,3 +1,3 @@
 # Maja Web Framework
 
-see [Wiki](Maja-framework_de)
+see [[Wiki|Maja-framework_de]]
