@@ -85,6 +85,11 @@ public abstract class AbstractWebApp {
 		return null;
 	}
 
+	public void startForTest() {
+		initConfig();
+		initDatabase();
+	}
+	
 	/**
 	 * init auth and app
 	 */
