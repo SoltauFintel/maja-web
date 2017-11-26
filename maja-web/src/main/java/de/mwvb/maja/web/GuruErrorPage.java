@@ -10,6 +10,9 @@ public class GuruErrorPage extends Action implements ErrorPage {
 		this.exception = exception;
 	}
 	
+	// TODO HTML in die Klasse einbetten, damit es jo immer dabei ist. (‹berschreibbar machen, wenn null 
+	// wird standardm‰ﬂig doch die Datei gezogen)
+	
 	@Override
 	protected void execute() {
 		Logger.error(exception);
