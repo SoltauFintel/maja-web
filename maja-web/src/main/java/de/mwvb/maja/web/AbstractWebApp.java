@@ -69,10 +69,6 @@ public abstract class AbstractWebApp {
 	}
 
 	protected void initConfig() {
-		String configFile = System.getenv("CONFIG");
-		if (configFile != null && !configFile.isEmpty()) {
-			AppConfig.filename = configFile;
-		}
 		config = new AppConfig();
 		development = "true".equals(config.get("development"));
 	}
@@ -155,7 +151,7 @@ public abstract class AbstractWebApp {
 	protected void banner(int port, String version) {
 		banner();
 		System.out.println("v" + version + " ready on port " + port);
-		System.out.println("Configuration file: " + AppConfig.filename
+		System.out.println("Configuration file: " + config.getFilename()
 				+ " | Log level: " + Logger.getLevel()
 				+ " | Mode: " + (development ? "development" : "production"));
 		
