@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.Properties;
 
 import com.google.common.base.Strings;
+import com.google.inject.Singleton;
 
 /**
  * Gives access to the application configuration
@@ -12,6 +13,7 @@ import com.google.common.base.Strings;
  * <p>Takes config filename from CONFIG env var. If it's not set "AppConfig.properties" is used.
  * If "AppConfig.properties" does not exist "/AppConfig.properties" will be used.</p>
  */
+@Singleton
 public class AppConfig {
 	private final String configFile;
 	private final Properties properties = new Properties();

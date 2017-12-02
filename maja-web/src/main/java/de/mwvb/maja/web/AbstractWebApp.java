@@ -23,6 +23,7 @@ import org.pmw.tinylog.writers.ConsoleWriter;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
+import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 
@@ -38,10 +39,11 @@ import spark.Response;
  */
 public abstract class AbstractWebApp {
 	private static final LocalDateTime boottime = LocalDateTime.now();
-	protected List<Plugin> plugins;
 	protected Level level;
-	public static AppConfig config;
+	protected List<Plugin> plugins;
 	private Injector injector;
+	@Inject
+	private AppConfig config;
 	
 	public void start(String version, Plugin ... plugins) {
 		start(version, Arrays.asList(plugins));
@@ -51,10 +53,7 @@ public abstract class AbstractWebApp {
 		initLogging();
 		
 		this.plugins = plugins;
-		injector = Guice.createInjector(getAllModules());
-		injector.injectMembers(this);
-		initConfig();
-		this.plugins.forEach(plugin -> plugin.init());
+		init();
 		
 		int port = Integer.parseInt(config.get("port"));
 		port(port);
@@ -71,9 +70,15 @@ public abstract class AbstractWebApp {
 	}
 
 	public void startForTest(Plugin ... plugins) {
-		initConfig();
 		this.plugins = Arrays.asList(plugins);
-		this.plugins.forEach(plugin -> plugin.init());
+		init();
+	}
+	
+	private void init() {
+		injector = Guice.createInjector(getAllModules());
+		injector.injectMembers(this);
+		plugins.forEach(plugin -> injector.injectMembers(plugin));
+		plugins.forEach(plugin -> plugin.init());
 	}
 
 	private List<Module> getAllModules() {
@@ -81,15 +86,12 @@ public abstract class AbstractWebApp {
 		modules.add(new AbstractModule() {
 			@Override
 			protected void configure() {
+				bind(AppConfig.class);
 			}
 		});
 		return modules;
 	}
 	
-	protected void initConfig() {
-		config = new AppConfig();
-	}
-
 	protected void defaultRoutes() {
 		setupExceptionHandler();
 	
