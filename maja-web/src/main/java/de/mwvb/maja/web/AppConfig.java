@@ -65,4 +65,13 @@ public class AppConfig {
 	public boolean isDevelopment() {
 		return "true".equals(get("development"));
 	}
+	
+	/**
+	 * @param key
+	 * @return true if the key exists and has got a non-empty value
+	 */
+	public boolean hasFilledKey(String key) {
+		String value = get(key);
+		return value != null && !value.trim().isEmpty();
+	}
 }

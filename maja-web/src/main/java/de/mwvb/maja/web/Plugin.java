@@ -4,12 +4,24 @@ import com.google.inject.Module;
 
 public interface Plugin {
 
+	/**
+	 * Phase 1
+	 * @return Guice Module that defines the classes that can be injected
+	 */
 	Module getModule();
 	
-	void init();
+	/**
+	 * Phase 2
+	 */
+	void prepare();
 	
 	/**
-	 * Setup routes.
+	 * Phase 3
+	 */
+	void install();
+	
+	/**
+	 * Phase 4: Setup routes.
 	 */
 	void routes();
 
