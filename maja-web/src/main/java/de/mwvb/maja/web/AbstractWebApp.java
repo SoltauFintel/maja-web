@@ -30,6 +30,8 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 
+import de.mwvb.maja.timer.BaseTimer;
+import de.mwvb.maja.timer.JuicyJobFactory;
 import spark.Request;
 import spark.Response;
 import spark.Route;
@@ -72,6 +74,8 @@ public abstract class AbstractWebApp {
     		externalStaticFileLocation("src/main/resources/web");
     	}
     	
+    	init();
+    	
     	defaultRoutes();
     	this.plugins.forEach(plugin -> plugin.routes());
     	routes();
@@ -101,6 +105,7 @@ public abstract class AbstractWebApp {
 			protected void configure() {
 				bind(AppConfig.class);
 				bind(Broadcaster.class);
+				bind(JuicyJobFactory.class);
 			}
 		});
 	}
@@ -144,6 +149,20 @@ public abstract class AbstractWebApp {
 		return "";
 	}
 
+	protected void init() {
+	}
+	
+	protected final void startTimer(Class<? extends BaseTimer> timerClass) {
+		try {
+			BaseTimer timer = timerClass.newInstance();
+			timer.start(injector);
+		} catch (InstantiationException e) {
+			throw new RuntimeException(e);
+		} catch (IllegalAccessException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
 	protected abstract void routes();
 	
 	protected final void _get(String path, Class<? extends ActionBase> actionClass) {
