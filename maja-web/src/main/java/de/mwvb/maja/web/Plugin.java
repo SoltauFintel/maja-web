@@ -1,7 +1,11 @@
 package de.mwvb.maja.web;
 
+import com.google.inject.Module;
+
 public interface Plugin {
 
+	Module getModule();
+	
 	void init();
 	
 	/**
