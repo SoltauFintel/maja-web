@@ -1,12 +1,9 @@
 package de.mwvb.maja.web;
 
-import static spark.Spark.delete;
 import static spark.Spark.exception;
 import static spark.Spark.externalStaticFileLocation;
 import static spark.Spark.get;
 import static spark.Spark.port;
-import static spark.Spark.post;
-import static spark.Spark.put;
 import static spark.Spark.staticFileLocation;
 
 import java.io.IOException;
@@ -34,7 +31,6 @@ import de.mwvb.maja.timer.BaseTimer;
 import de.mwvb.maja.timer.JuicyJobFactory;
 import spark.Request;
 import spark.Response;
-import spark.Route;
 
 /**
  * Maja-web comes with Spark, Actions, templating (Velocity), configuration, banner, favicon,
@@ -50,6 +46,10 @@ public abstract class AbstractWebApp {
 	private Injector injector;
 	@Inject
 	private AppConfig config;
+	@Inject
+	private Routes routes;
+	@Inject
+	private ActionInitializer actionInitializer;
 	
 	public void start(String version, Plugin ... plugins) {
 		start(version, Arrays.asList(plugins));
@@ -106,6 +106,8 @@ public abstract class AbstractWebApp {
 				bind(AppConfig.class);
 				bind(Broadcaster.class);
 				bind(JuicyJobFactory.class);
+				bind(ActionInitializer.class);
+				bind(Routes.class);
 			}
 		});
 	}
@@ -124,7 +126,7 @@ public abstract class AbstractWebApp {
 				((ErrorPage) action).setException(exception);
 			}
 			if (action instanceof Action) {
-				initAction(req, (Action) action);
+				actionInitializer.initAction(req, (Action) action);
 			}
 			String html = action.run();
 			res.body(html);
@@ -166,34 +168,19 @@ public abstract class AbstractWebApp {
 	protected abstract void routes();
 	
 	protected final void _get(String path, Class<? extends ActionBase> actionClass) {
-		get(path, createRoute(actionClass));
+		routes._get(path, actionClass);
 	}
 	
 	protected final void _post(String path, Class<? extends ActionBase> actionClass) {
-		post(path, createRoute(actionClass));
+		routes._post(path, actionClass);
 	}
 
 	protected final void _put(String path, Class<? extends ActionBase> actionClass) {
-		put(path, createRoute(actionClass));
+		routes._put(path, actionClass);
 	}
 
 	protected final void _delete(String path, Class<? extends ActionBase> actionClass) {
-		delete(path, createRoute(actionClass));
-	}
-
-	private Route createRoute(Class<? extends ActionBase> actionClass) {
-		return (req, res) -> {
-			ActionBase action = actionClass.newInstance();
-			injector.injectMembers(action);
-			action.init(req, res);
-			if (action instanceof Action) {
-				initAction(req, (Action) action);
-			}
-			return action.run();
-		};
-	}
-
-	protected void initAction(Request req, Action action) {
+		routes._delete(path, actionClass);
 	}
 
 	protected void banner(int port, String version) {
