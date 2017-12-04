@@ -10,6 +10,7 @@ import spark.Response;
  * Use this class for pageless actions, e.g. save actions that redirect to another page.
  */
 public abstract class ActionBase {
+	public static String USER_ID = "user_id";
 	protected Request req;
 	protected Response res;
 
@@ -19,4 +20,8 @@ public abstract class ActionBase {
 	}
 	
 	public abstract String run();
+	
+	protected String getUserId() {
+		return req.session().attribute(USER_ID);
+	}
 }
