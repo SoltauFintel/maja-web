@@ -21,7 +21,6 @@ import org.pmw.tinylog.Level;
 import org.pmw.tinylog.Logger;
 import org.pmw.tinylog.writers.ConsoleWriter;
 
-import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -56,8 +55,7 @@ public abstract class AbstractWebApp {
 		injector = Guice.createInjector(getAllModules());
 		injector.injectMembers(this);
 		plugins.forEach(plugin -> injector.injectMembers(plugin));
-		plugins.forEach(plugin -> plugin.prepare());
-		plugins.forEach(plugin -> plugin.install());
+		plugins.forEach(plugin -> plugin.init());
 		
 		int port = Integer.parseInt(config.get("port"));
 		port(port);
@@ -75,38 +73,39 @@ public abstract class AbstractWebApp {
 
 	private List<Module> getAllModules() {
 		List<Module> modules = new ArrayList<>();
-		
 		addModules(modules);
-		
-		plugins.forEach(plugin -> {
+		modules.add(getAppModule());
+		for (Plugin plugin : plugins) {
 			Module module = plugin.getModule();
 			if (module != null) {
 				modules.add(module);
 			}
-		});
+		}
 		return modules;
 	}
 	
-	/**
-	 * Extend this method to add a own module for depedency injection.
-	 * @param modules
-	 */
 	protected void addModules(List<Module> modules) {
-		modules.add(new AbstractModule() {
-			@Override
-			protected void configure() {
-				bind(AppConfig.class);
-				bind(Broadcaster.class);
-			}
-		});
+		modules.add(new MajaWebModule());
 	}
+	
+	protected abstract Module getAppModule();
 	
 	protected void defaultRoutes() {
 		setupExceptionHandler();
+	
 		get("/rest/_ping", (req, res) -> "pong");
+		addNotProtected("/rest/_");
+		
 		get("/favicon.ico", (req, res) -> getFavicon(req, res));
+		addNotProtected("/favicon.ico");
 	}
 	
+	protected void addNotProtected(String path) {
+		plugins.stream()
+			.filter(plugin -> plugin instanceof AuthPlugin)
+			.forEach(plugin -> ((AuthPlugin) plugin).addNotProtected(path));
+	}
+
 	private void setupExceptionHandler() {
 		exception(RuntimeException.class, (exception, req, res) -> {
 			ActionBase action = getErrorPage();
