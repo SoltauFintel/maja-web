@@ -4,6 +4,7 @@ import static spark.Spark.exception;
 import static spark.Spark.externalStaticFileLocation;
 import static spark.Spark.get;
 import static spark.Spark.port;
+import static spark.Spark.post;
 import static spark.Spark.staticFileLocation;
 
 import java.io.IOException;
@@ -20,6 +21,7 @@ import org.pmw.tinylog.writers.ConsoleWriter;
 
 import spark.Request;
 import spark.Response;
+import spark.Route;
 
 /**
  * Maja-web comes with Spark, Actions, templating (Velocity), configuration, banner, favicon,
@@ -36,30 +38,27 @@ public abstract class AbstractWebApp {
 	
 	public void start(String version) {
 		initLogging();
-		
 		initConfig();
-		initDatabase();
 		
 		int port = Integer.parseInt(config.get("port"));
 		port(port);
+		banner(port, version);
 		
     	staticFileLocation("web");
     	if (config.isDevelopment()) {
     		externalStaticFileLocation("src/main/resources/web");
     	}
     	
+    	initDatabase();
     	init();
-		if ("false".equals(config.get("auth"))) {
-			if (!config.isDevelopment()) {
-				System.err.println("[WARNING] Authentication is deactivated! Web application is not secure.");
-			}
-			auth.deactivate();
-		}
     	
     	defaultRoutes();
     	routes();
-    	
-		banner(port, version);
+	}
+
+	public void startForTest() {
+		initConfig();
+		initDatabase();
 	}
 
 	protected void initConfig() {
@@ -70,18 +69,6 @@ public abstract class AbstractWebApp {
 	 * Open database (if database is needed)
 	 */
 	protected void initDatabase() {
-	}
-	
-	/**
-	 * @return database name and user for internal output
-	 */
-	protected String getDatabaseInfo() {
-		return null;
-	}
-
-	public void startForTest() {
-		initConfig();
-		initDatabase();
 	}
 	
 	/**
@@ -139,14 +126,7 @@ public abstract class AbstractWebApp {
 	protected abstract void routes();
 	
 	protected final void _get(String path, Class<? extends ActionBase> actionClass) {
-		get(path, (req, res) -> {
-			ActionBase action = actionClass.newInstance();
-			action.init(req, res);
-			if (action instanceof Action) {
-				initAction(req, (Action) action);
-			}
-			return action.run();
-		});
+		get(path, createRoute(actionClass));
 	}
 
 	protected final void _get(String path, ActionBase action) {
@@ -159,6 +139,21 @@ public abstract class AbstractWebApp {
 		});
 	}
 
+	protected final void _post(String path, Class<? extends ActionBase> actionClass) {
+		post(path, createRoute(actionClass));
+	}
+
+	private Route createRoute(Class<? extends ActionBase> actionClass) {
+		return (req, res) -> {
+			ActionBase action = actionClass.newInstance();
+			action.init(req, res);
+			if (action instanceof Action) {
+				initAction(req, (Action) action);
+			}
+			return action.run();
+		};
+	}
+
 	protected void initAction(Request req, Action action) {
 	}
 
@@ -169,12 +164,7 @@ public abstract class AbstractWebApp {
 				+ " | Log level: " + Logger.getLevel()
 				+ " | Mode: " + (config.isDevelopment() ? "development" : "production"));
 		
-		String info = getDatabaseInfo();
-		if (info != null) {
-			System.out.println(info);
-		}
-		
-		info = getTimeInfo();
+		String info = getTimeInfo();
 		if (info != null) {
 			System.out.println(info);
 		}
