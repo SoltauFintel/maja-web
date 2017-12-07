@@ -12,7 +12,6 @@ import java.io.OutputStream;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -20,11 +19,6 @@ import org.pmw.tinylog.Configurator;
 import org.pmw.tinylog.Level;
 import org.pmw.tinylog.Logger;
 import org.pmw.tinylog.writers.ConsoleWriter;
-
-import com.google.inject.AbstractModule;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.Module;
 
 import spark.Request;
 import spark.Response;
@@ -42,7 +36,6 @@ public abstract class AbstractWebApp {
 	protected Level level;
 	public static AppConfig config;
 	protected boolean development;
-	private Injector injector;
 	
 	public void start(String version, Plugin ... plugins) {
 		start(version, Arrays.asList(plugins));
@@ -51,10 +44,8 @@ public abstract class AbstractWebApp {
 	public void start(String version, List<Plugin> plugins) {
 		initLogging();
 		
-		this.plugins = plugins;
-		injector = Guice.createInjector(getAllModules());
-		injector.injectMembers(this);
 		initConfig();
+		this.plugins = plugins;
 		this.plugins.forEach(plugin -> plugin.init());
 		
 		int port = Integer.parseInt(config.get("port"));
@@ -77,16 +68,6 @@ public abstract class AbstractWebApp {
 		this.plugins.forEach(plugin -> plugin.init());
 	}
 
-	private List<Module> getAllModules() {
-		List<Module> modules = new ArrayList<>();
-		modules.add(new AbstractModule() {
-			@Override
-			protected void configure() {
-			}
-		});
-		return modules;
-	}
-	
 	protected void initConfig() {
 		config = new AppConfig();
 		development = "true".equals(config.get("development"));
