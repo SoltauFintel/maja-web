@@ -52,10 +52,7 @@ public abstract class AbstractWebApp {
 		initLogging();
 		
 		this.plugins = plugins;
-		injector = Guice.createInjector(getAllModules());
-		injector.injectMembers(this);
-		plugins.forEach(plugin -> injector.injectMembers(plugin));
-		plugins.forEach(plugin -> plugin.init());
+		init();
 		
 		int port = Integer.parseInt(config.get("port"));
 		port(port);
@@ -71,24 +68,27 @@ public abstract class AbstractWebApp {
     	routes();
 	}
 
+	public void startForTest(Plugin ... plugins) {
+		this.plugins = Arrays.asList(plugins);
+		init();
+	}
+	
+	private void init() {
+		injector = Guice.createInjector(getAllModules());
+		injector.injectMembers(this);
+		plugins.forEach(plugin -> injector.injectMembers(plugin));
+		plugins.forEach(plugin -> plugin.init());
+	}
+
 	private List<Module> getAllModules() {
 		List<Module> modules = new ArrayList<>();
 		addModules(modules);
-		modules.add(getAppModule());
-		for (Plugin plugin : plugins) {
-			Module module = plugin.getModule();
-			if (module != null) {
-				modules.add(module);
-			}
-		}
 		return modules;
 	}
 	
 	protected void addModules(List<Module> modules) {
 		modules.add(new MajaWebModule());
 	}
-	
-	protected abstract Module getAppModule();
 	
 	protected void defaultRoutes() {
 		setupExceptionHandler();
@@ -100,7 +100,7 @@ public abstract class AbstractWebApp {
 		addNotProtected("/favicon.ico");
 	}
 	
-	protected void addNotProtected(String path) {
+	private void addNotProtected(String path) {
 		plugins.stream()
 			.filter(plugin -> plugin instanceof AuthPlugin)
 			.forEach(plugin -> ((AuthPlugin) plugin).addNotProtected(path));
@@ -144,7 +144,6 @@ public abstract class AbstractWebApp {
 	protected final void _get(String path, Class<? extends ActionBase> actionClass) {
 		get(path, (req, res) -> {
 			ActionBase action = actionClass.newInstance();
-			injector.injectMembers(action);
 			action.init(req, res);
 			if (action instanceof Action) {
 				initAction(req, (Action) action);
@@ -155,7 +154,6 @@ public abstract class AbstractWebApp {
 
 	protected final void _get(String path, ActionBase action) {
 		get(path, (req, res) -> {
-			injector.injectMembers(action);
 			action.init(req, res);
 			if (action instanceof Action) {
 				initAction(req, (Action) action);
