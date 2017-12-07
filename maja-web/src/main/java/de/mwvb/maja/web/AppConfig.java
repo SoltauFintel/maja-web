@@ -4,37 +4,23 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
 
-import com.google.common.base.Strings;
-
-/**
- * Gives access to the application configuration
- * 
- * <p>Takes config filename from CONFIG env var. If it's not set "AppConfig.properties" is used.
- * If "AppConfig.properties" does not exist "/AppConfig.properties" will be used.</p>
- */
 public class AppConfig {
-	private final String configFile;
+	public static String filename = "AppConfig.properties";
 	private final Properties properties = new Properties();
 	
 	public AppConfig() {
-		String dn = System.getenv("CONFIG");
-		if (Strings.isNullOrEmpty(dn)) {
-			dn = "AppConfig.properties";
-		}
 		try {
-			properties.load(new FileReader(dn));
+			properties.load(new FileReader(filename));
 		} catch (IOException e1) {
-			if (dn.startsWith("/")) {
+			if (filename.startsWith("/")) {
 				throw new RuntimeException(e1);
 			}
 			try {
-				dn = "/" + dn;
-				properties.load(new FileReader(dn));
+				properties.load(new FileReader("/" + filename));
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
 		}
-		configFile = dn;
 	}
 	
 	/**
@@ -54,9 +40,5 @@ public class AppConfig {
 	public String get(String key, String pDefault) {
 		String ret = properties.getProperty(key);
 		return ret == null ? pDefault : ret.trim();
-	}
-
-	public String getFilename() {
-		return configFile;
 	}
 }
