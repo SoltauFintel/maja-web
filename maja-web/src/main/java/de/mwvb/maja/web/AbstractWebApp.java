@@ -12,8 +12,6 @@ import java.io.OutputStream;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.List;
 
 import org.pmw.tinylog.Configurator;
 import org.pmw.tinylog.Level;
@@ -32,40 +30,37 @@ import spark.Response;
  */
 public abstract class AbstractWebApp {
 	private static final LocalDateTime boottime = LocalDateTime.now();
-	protected List<Plugin> plugins;
-	protected Level level;
-	public static AppConfig config;
 	protected boolean development;
+	protected Level level;
+	protected AppConfig config;
+	protected AuthPlugin auth;
 	
-	public void start(String version, Plugin ... plugins) {
-		start(version, Arrays.asList(plugins));
-	}
-	
-	public void start(String version, List<Plugin> plugins) {
+	public void start(String version) {
 		initLogging();
 		
 		initConfig();
-		this.plugins = plugins;
-		this.plugins.forEach(plugin -> plugin.init());
+		initDatabase();
 		
 		int port = Integer.parseInt(config.get("port"));
 		port(port);
-		banner(port, version);
 		
     	staticFileLocation("web");
     	if (development) {
     		externalStaticFileLocation("src/main/resources/web");
     	}
     	
+    	init();
+		if ("false".equals(config.get("auth"))) {
+			if (!development) {
+				System.err.println("[WARNING] Authentication is deactivated! Web application is not secure.");
+			}
+			auth.deactivate();
+		}
+    	
     	defaultRoutes();
-    	this.plugins.forEach(plugin -> plugin.routes());
     	routes();
-	}
-
-	public void startForTest(Plugin ... plugins) {
-		initConfig();
-		this.plugins = Arrays.asList(plugins);
-		this.plugins.forEach(plugin -> plugin.init());
+    	
+		banner(port, version);
 	}
 
 	protected void initConfig() {
@@ -77,20 +72,41 @@ public abstract class AbstractWebApp {
 		development = "true".equals(config.get("development"));
 	}
 
+	/**
+	 * Open database (if database is needed)
+	 */
+	protected void initDatabase() {
+	}
+	
+	/**
+	 * @return database name and user for internal output
+	 */
+	protected String getDatabaseInfo() {
+		return null;
+	}
+
+	public void startForTest() {
+		initConfig();
+		initDatabase();
+	}
+	
+	/**
+	 * init auth and app
+	 */
+	protected void init() {
+		auth = new NoOpAuthPlugin();
+	}
+	
 	protected void defaultRoutes() {
 		setupExceptionHandler();
 	
 		get("/rest/_ping", (req, res) -> "pong");
-		addNotProtected("/rest/_");
-		
-		get("/favicon.ico", (req, res) -> getFavicon(req, res));
-		addNotProtected("/favicon.ico");
-	}
+		auth.addNotProtected("/rest/_");
 	
-	private void addNotProtected(String path) {
-		plugins.stream()
-			.filter(plugin -> plugin instanceof AuthPlugin)
-			.forEach(plugin -> ((AuthPlugin) plugin).addNotProtected(path));
+		get("/favicon.ico", (req, res) -> getFavicon(req, res));
+		auth.addNotProtected("/favicon.ico");
+	
+		auth.routes();
 	}
 
 	private void setupExceptionHandler() {
@@ -159,14 +175,22 @@ public abstract class AbstractWebApp {
 				+ " | Log level: " + Logger.getLevel()
 				+ " | Mode: " + (development ? "development" : "production"));
 		
-		plugins.forEach(plugin -> plugin.printInfo());
+		String info = getDatabaseInfo();
+		if (info != null) {
+			System.out.println(info);
+		}
 		
-		String info = getTimeInfo();
+		info = getTimeInfo();
 		if (info != null) {
 			System.out.println(info);
 		}
 	}
 	
+	protected String getTimeInfo() {
+		return "Date/time: " + DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss").format(LocalDateTime.now())
+				+ ", timezone: " + ZoneId.systemDefault();
+	}
+
 	protected void banner() {
 		try (InputStream is = getClass().getResourceAsStream("/banner.txt")) {
 			try (java.util.Scanner scanner = new java.util.Scanner(is)) {
@@ -177,12 +201,7 @@ public abstract class AbstractWebApp {
 			}
 		} catch (IOException ignore) {}
 	}
-
-	protected String getTimeInfo() {
-		return "Date/time: " + DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss").format(LocalDateTime.now())
-				+ ", timezone: " + ZoneId.systemDefault();
-	}
-
+	
 	public static LocalDateTime getBoottime() {
 		return boottime;
 	}
