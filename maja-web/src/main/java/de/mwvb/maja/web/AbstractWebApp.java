@@ -1,12 +1,9 @@
 package de.mwvb.maja.web;
 
-import static spark.Spark.delete;
 import static spark.Spark.exception;
 import static spark.Spark.externalStaticFileLocation;
 import static spark.Spark.get;
 import static spark.Spark.port;
-import static spark.Spark.post;
-import static spark.Spark.put;
 import static spark.Spark.staticFileLocation;
 
 import java.io.IOException;
@@ -32,7 +29,6 @@ import com.google.inject.Module;
 
 import spark.Request;
 import spark.Response;
-import spark.Route;
 
 /**
  * Maja-web comes with Spark, Actions, templating (Velocity), configuration, banner, favicon,
@@ -147,23 +143,7 @@ public abstract class AbstractWebApp {
 	protected abstract void routes();
 	
 	protected final void _get(String path, Class<? extends ActionBase> actionClass) {
-		get(path, createRoute(actionClass));
-	}
-	
-	protected final void _post(String path, Class<? extends ActionBase> actionClass) {
-		post(path, createRoute(actionClass));
-	}
-
-	protected final void _put(String path, Class<? extends ActionBase> actionClass) {
-		put(path, createRoute(actionClass));
-	}
-
-	protected final void _delete(String path, Class<? extends ActionBase> actionClass) {
-		delete(path, createRoute(actionClass));
-	}
-
-	private Route createRoute(Class<? extends ActionBase> actionClass) {
-		return (req, res) -> {
+		get(path, (req, res) -> {
 			ActionBase action = actionClass.newInstance();
 			injector.injectMembers(action);
 			action.init(req, res);
@@ -171,7 +151,18 @@ public abstract class AbstractWebApp {
 				initAction(req, (Action) action);
 			}
 			return action.run();
-		};
+		});
+	}
+
+	protected final void _get(String path, ActionBase action) {
+		get(path, (req, res) -> {
+			injector.injectMembers(action);
+			action.init(req, res);
+			if (action instanceof Action) {
+				initAction(req, (Action) action);
+			}
+			return action.run();
+		});
 	}
 
 	protected void initAction(Request req, Action action) {
