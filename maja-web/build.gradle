@@ -2,7 +2,7 @@ apply plugin: 'java'
 apply plugin: 'eclipse'
 
 group = 'de.mwvb.maja'
-version = '0.1.2'
+version = '0.2.0'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -15,6 +15,7 @@ dependencies {
 	compile 'com.sparkjava:spark-template-velocity:2.5.5'
 	compile 'com.google.guava:guava:21.0'
 	compile 'org.tinylog:tinylog:1.2'
+	compile 'org.quartz-scheduler:quartz:2.3.0'
 }
 
 repositories {

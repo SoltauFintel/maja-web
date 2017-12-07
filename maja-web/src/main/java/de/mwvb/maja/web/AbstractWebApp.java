@@ -30,7 +30,6 @@ import spark.Response;
  */
 public abstract class AbstractWebApp {
 	private static final LocalDateTime boottime = LocalDateTime.now();
-	protected boolean development;
 	protected Level level;
 	protected AppConfig config;
 	protected AuthPlugin auth;
@@ -45,13 +44,13 @@ public abstract class AbstractWebApp {
 		port(port);
 		
     	staticFileLocation("web");
-    	if (development) {
+    	if (config.isDevelopment()) {
     		externalStaticFileLocation("src/main/resources/web");
     	}
     	
     	init();
 		if ("false".equals(config.get("auth"))) {
-			if (!development) {
+			if (!config.isDevelopment()) {
 				System.err.println("[WARNING] Authentication is deactivated! Web application is not secure.");
 			}
 			auth.deactivate();
@@ -64,12 +63,7 @@ public abstract class AbstractWebApp {
 	}
 
 	protected void initConfig() {
-		String configFile = System.getenv("CONFIG");
-		if (configFile != null && !configFile.isEmpty()) {
-			AppConfig.filename = configFile;
-		}
 		config = new AppConfig();
-		development = "true".equals(config.get("development"));
 	}
 
 	/**
@@ -171,9 +165,9 @@ public abstract class AbstractWebApp {
 	protected void banner(int port, String version) {
 		banner();
 		System.out.println("v" + version + " ready on port " + port);
-		System.out.println("Configuration file: " + AppConfig.filename
+		System.out.println("Configuration file: " + config.getFilename()
 				+ " | Log level: " + Logger.getLevel()
-				+ " | Mode: " + (development ? "development" : "production"));
+				+ " | Mode: " + (config.isDevelopment() ? "development" : "production"));
 		
 		String info = getDatabaseInfo();
 		if (info != null) {
