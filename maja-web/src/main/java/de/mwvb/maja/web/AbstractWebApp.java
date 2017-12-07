@@ -21,6 +21,7 @@ import org.pmw.tinylog.Level;
 import org.pmw.tinylog.Logger;
 import org.pmw.tinylog.writers.ConsoleWriter;
 
+import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -82,12 +83,13 @@ public abstract class AbstractWebApp {
 
 	private List<Module> getAllModules() {
 		List<Module> modules = new ArrayList<>();
-		addModules(modules);
+		modules.add(new AbstractModule() {
+			@Override
+			protected void configure() {
+				bind(AppConfig.class);
+			}
+		});
 		return modules;
-	}
-	
-	protected void addModules(List<Module> modules) {
-		modules.add(new MajaWebModule());
 	}
 	
 	protected void defaultRoutes() {
