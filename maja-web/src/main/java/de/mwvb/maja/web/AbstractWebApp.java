@@ -189,7 +189,7 @@ public abstract class AbstractWebApp {
 	public static LocalDateTime getBoottime() {
 		return boottime;
 	}
-
+	
 	protected void initLogging() {
 		level = Level.WARNING;
 		String loglevel = System.getenv("LOGLEVEL");
