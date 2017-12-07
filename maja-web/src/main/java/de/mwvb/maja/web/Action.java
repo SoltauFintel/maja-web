@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import spark.ModelAndView;
+import spark.Spark;
 
 /**
  * The page of this action has the file name "src/main/resources/templates/{this class name}.html".
@@ -30,5 +31,20 @@ public abstract class Action extends ActionBase {
 
 	public String getPage() {
 		return folder + getClass().getSimpleName().toLowerCase() + suffix;
+	}
+	
+	public static void get(String path, Class<? extends ActionBase> actionClass) {
+		Spark.get(path, (req, res) -> {
+			ActionBase action = actionClass.newInstance();
+			action.init(req, res);
+			return action.run();
+		});
+	}
+
+	public static void get(String path, ActionBase action) {
+		Spark.get(path, (req, res) -> {
+			action.init(req, res);
+			return action.run();
+		});
 	}
 }
