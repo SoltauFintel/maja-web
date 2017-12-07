@@ -59,8 +59,4 @@ public class AppConfig {
 	public String getFilename() {
 		return configFile;
 	}
-	
-	public boolean isDevelopment() {
-		return "true".equals(get("development"));
-	}
 }

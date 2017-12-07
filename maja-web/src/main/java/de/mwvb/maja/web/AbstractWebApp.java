@@ -41,6 +41,7 @@ public abstract class AbstractWebApp {
 	protected List<Plugin> plugins;
 	protected Level level;
 	public static AppConfig config;
+	protected boolean development;
 	private Injector injector;
 	
 	public void start(String version, Plugin ... plugins) {
@@ -61,7 +62,7 @@ public abstract class AbstractWebApp {
 		banner(port, version);
 		
     	staticFileLocation("web");
-    	if (config.isDevelopment()) {
+    	if (development) {
     		externalStaticFileLocation("src/main/resources/web");
     	}
     	
@@ -88,6 +89,7 @@ public abstract class AbstractWebApp {
 	
 	protected void initConfig() {
 		config = new AppConfig();
+		development = "true".equals(config.get("development"));
 	}
 
 	protected void defaultRoutes() {
@@ -170,7 +172,7 @@ public abstract class AbstractWebApp {
 		System.out.println("v" + version + " ready on port " + port);
 		System.out.println("Configuration file: " + config.getFilename()
 				+ " | Log level: " + Logger.getLevel()
-				+ " | Mode: " + (config.isDevelopment() ? "development" : "production"));
+				+ " | Mode: " + (development ? "development" : "production"));
 		
 		plugins.forEach(plugin -> plugin.printInfo());
 		
