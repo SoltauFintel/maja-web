@@ -1,3 +1,5 @@
+maja-web will be continued at https://github.com/SoltauFintel/maja/
+
 # Maja Web Framework
 
 Maja is a Java 8 web framework based on [Spark](http://sparkjava.com).
